@@ -1,126 +1,151 @@
-window.onload = function() {
-  CreateTiles();
-  NewGame();
-}
-var tilesCount = 16;
-var rowCount = 4;
-var tiles = [];
-var tilesColor = [];
-var firstClick = -1;
-var secondClick = -1;
-var canClick = true;
-var bgColor = "#fff";
-var openTiles = tilesCount;
+ var tilesCount = 6;
+
+ var bgColor = "#fff";
+ var firstClick = -1;
+ var secondClick = -1;
+ var canClick = true;
+
+ var openTiles = tilesCount;
+
+ var Tile = React.createClass({
+   render: function() {
+     return (
+       <div className='tile'  
+      id = {this.props.id} 
+      style={{backgroundColor: this.props.tileBackgroundColor, visibility:this.props.tileVisibility}}>
+        </div>
+     );
+   }
+ });
+
+ var Tiles = React.createClass({
+   init: function() {
+     var tiles = [];
+     var tmp = [];
+
+     for (var i = 0; i < tilesCount; i++) {
+       tmp[i] = i;
+       tiles[i] = {
+         tileBackgroundColor: bgColor,
+         tileVisibility: 'visible',
+       };
+     }
+
+     var emptyTiles = tilesCount;
+     for (i = 0; i < tilesCount / 2; i++) {
+
+       var newColor = getRandomColor();
+       var next = getRandomInt(0, emptyTiles);
+       tiles[tmp[next]].color = newColor;
+       emptyTiles--;
+       tmp[next] = tmp[emptyTiles];
+
+       next = getRandomInt(0, emptyTiles);
+       tiles[tmp[next]].color = newColor;
+       emptyTiles--;
+       tmp[next] = tmp[emptyTiles];
+     }
+
+     return tiles;
+   },
+
+   getInitialState: function() {
+     return {
+       tilesState: this.init()
+     };
+   },
+
+   tileClcik: function(e) {
+     var st = this;
+     if (!canClick) return;
+     var newState = this.state.tilesState.slice();
+     canClick = false;
+
+     if (firstClick < 0) {
+       firstClick = e.target.id;
+       newState[e.target.id].tileBackgroundColor = newState[e.target.id].color;
+       this.replaceState({
+         tilesState: newState
+       });
+       canClick = true;
+     } else {
+       if (e.target.id == firstClick) {
+         canClick = true;
+         return;
+       }
+       secondClick = e.target.id;
+       newState[e.target.id].tileBackgroundColor = newState[e.target.id].color;
+       this.replaceState({
+         tilesState: newState
+       });
+       if (newState[firstClick].color == newState[secondClick].color) {
+         setTimeout(function() {
+           newState[firstClick].tileVisibility = "hidden";
+           newState[secondClick].tileVisibility = "hidden";
+           st.replaceState({
+             tilesState: newState
+           });
+           firstClick = -1;
+           secondClick = -1;
+           openTiles -= 2;
+           canClick = true;
+           if (openTiles == 0) {
+             openTiles = tilesCount
+             st.replaceState({
+               tilesState: st.init()
+             });
+           }
+         }, 1000)
+       } else {
+         setTimeout(function() {
+           newState[firstClick].tileBackgroundColor = bgColor;
+           newState[secondClick].tileBackgroundColor = bgColor;
+           st.replaceState({
+             tilesState: newState
+           });
+           firstClick = -1;
+           secondClick = -1;
+           canClick = true;
+         }, 1000)
+       }
+     }
+   },
+
+   render: function() {
+     return (
+       <div onClick={this.tileClcik}>                        
+                            {
+                               this.state.tilesState.map(function(el,i) {
+                  
+                                    return <Tile                    
+                    key = {i}
+                    id = {i}
+                    tileVisibility = {el.tileVisibility}
+                                        tileBackgroundColor = {el.tileBackgroundColor}
+                                    />;
+                               })
+                            }                        
+                    </div>
+     );
+   }
+ });
 
 
-function CreateTiles() {
-  var board = document.getElementById("board");
-  for (var i = 0; i < tilesCount; i++) {
-    var newElem = document.createElement('div');
-    newElem.className = "tile";
-    newElem.setAttribute("id", i);
-    board.appendChild(newElem);
-    tiles[i] = newElem;
-  }
-  addHandler(board, 'mouseup', clickOnBoard);
-}
+ ReactDOM.render(
+   <Tiles />,
+   document.getElementById('board')
+ );
 
 
-function NewGame() {
-  openTiles = tilesCount;
-  setTileColor();
-  tiles.forEach(function(elem) {
-    elem.style.visibility = "";
-    elem.style.backgroundColor = bgColor;
-  });
-}
+ function getRandomInt(min, max) {
+   return Math.floor(Math.random() * (max - min)) + min;
+ }
 
-
-
-function clickOnBoard(e) {
-  if (!canClick) return;
-  canClick = false;
-  if (firstClick < 0) {
-    firstClick = e.srcElement.id;
-    tiles[e.srcElement.id].style.backgroundColor = tilesColor[firstClick];
-    canClick = true;
-  } else {
-    if (e.srcElement.id == firstClick) {
-      canClick = true;
-      return;
-    }
-    secondClick = e.srcElement.id;
-    tiles[e.srcElement.id].style.backgroundColor = tilesColor[secondClick];
-    if (tilesColor[firstClick] == tilesColor[secondClick]) {
-      setTimeout(function() {
-        tiles[firstClick].style.visibility = "hidden";
-        tiles[secondClick].style.visibility = "hidden";
-        firstClick = -1;
-        secondClick = -1;
-        openTiles -= 2;
-        canClick = true;
-        if (openTiles == 0) {
-          NewGame();
-        }
-      }, 1000)
-    } else {
-      setTimeout(function() {
-        tiles[firstClick].style.backgroundColor = bgColor;
-        tiles[secondClick].style.backgroundColor = bgColor;
-        firstClick = -1;
-        secondClick = -1;
-        canClick = true;
-      }, 1000)
-
-    }
-
-  }
-
-}
-
-
-function setTileColor() {
-  var tmp = [];
-  for (var i = 0; i < tilesCount; i++) {
-    tmp[i] = i;
-  }
-  var emptyTiles = tilesCount;
-  for (i = 0; i < tilesCount / 2; i++) {
-
-    var newColor = getRandomColor();
-
-
-
-    var next = getRandomInt(0, emptyTiles);
-    tilesColor[tmp[next]] = newColor;
-    emptyTiles--;
-    tmp[next] = tmp[emptyTiles];
-
-    next = getRandomInt(0, emptyTiles);
-    tilesColor[tmp[next]] = newColor;
-    emptyTiles--;
-    tmp[next] = tmp[emptyTiles];
-  }
-}
-
-function getRandomInt(min, max) {
-  return Math.floor(Math.random() * (max - min)) + min;
-}
-
-function getRandomColor() {
-  var letters = '0123456789ABCDEF'.split('');
-  var color = '#';
-  for (var i = 0; i < 6; i++) {
-    color += letters[Math.floor(Math.random() * 16)];
-  }
-  return color;
-}
-
-
-function addHandler(object, event, handler) {
-  if (object.addEventListener) {
-    object.addEventListener(event, handler, false);
-  } else if (object.attachEvent) {
-    object.attachEvent('on' + event, handler);
-  } else alert("Обработчик не поддерживается");
-}
+ function getRandomColor() {
+   var letters = '0123456789ABCDEF'.split('');
+   var color = '#';
+   for (var i = 0; i < 6; i++) {
+     color += letters[Math.floor(Math.random() * 16)];
+   }
+   return color;
+ }
